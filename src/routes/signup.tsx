@@ -1,0 +1,130 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
+import { signUpWithEmail } from "@/lib/auth-client";
+
+const PRICE_ID = "price_1THEaR3tkOMfsQ3kfwRkYBUp";
+
+function SignUpPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    const result = await signUpWithEmail(email, password, name);
+    
+    if (result.success) {
+      // After successful signup, redirect to Stripe checkout
+      const siteUrl = import.meta.env.VITE_CONVEX_SITE_URL;
+      if (siteUrl) {
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        window.location.href = `${siteUrl}/stripe/checkout?priceId=${PRICE_ID}&origin=${encodeURIComponent(origin)}`;
+      } else {
+        navigate({ to: "/pricing" });
+      }
+    } else {
+      setIsLoading(false);
+      setError(result.error?.message ?? "An error occurred");
+    }
+  };
+
+  return (
+    <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
+      <div className="w-full max-w-md">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#3dd45c] to-[#00c9a7] flex items-center justify-center text-white font-bold text-xl mx-auto mb-4">
+            ≡
+          </div>
+          <h1 className="text-2xl font-bold">Create your account</h1>
+          <p className="text-gray-400 text-sm mt-1">Start your FlipDash Pro subscription — $49/month</p>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Full Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => { setName(e.target.value); setError(null); }}
+              required
+              placeholder="John Doe"
+              className="w-full px-4 py-3 rounded-xl bg-[#131a2b] border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#3dd45c]/50 focus:border-[#3dd45c]/50 transition-all text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(null); }}
+              required
+              placeholder="you@example.com"
+              className="w-full px-4 py-3 rounded-xl bg-[#131a2b] border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#3dd45c]/50 focus:border-[#3dd45c]/50 transition-all text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => { setPassword(e.target.value); setError(null); }}
+              required
+              minLength={8}
+              placeholder="Min. 8 characters"
+              className="w-full px-4 py-3 rounded-xl bg-[#131a2b] border border-white/[0.08] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#3dd45c]/50 focus:border-[#3dd45c]/50 transition-all text-sm"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3 rounded-xl bg-gradient-to-r from-[#3dd45c] to-[#00c9a7] text-black font-semibold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                Creating account...
+              </span>
+            ) : (
+              "Create Account & Subscribe"
+            )}
+          </button>
+
+          <div className="flex items-center justify-center gap-3 text-xs text-gray-500">
+            <span className="flex items-center gap-1">🔒 Secure payment via Stripe</span>
+            <span>•</span>
+            <span>Cancel anytime</span>
+          </div>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Already have an account?{" "}
+          <Link to="/signin" className="text-[#3dd45c] font-medium hover:underline">
+            Sign in
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export const Route = createFileRoute("/signup")({
+  component: SignUpPage,
+});
